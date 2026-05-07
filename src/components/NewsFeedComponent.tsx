@@ -3,11 +3,10 @@
 import { useEffect, useState } from 'react';
 
 interface NewsItem {
-  gdate: string;
-  headline: string;
+  title: string;
   url: string;
-  source: string;
-  location?: string;
+  pubDate: string;
+  description: string;
   theme?: string;
 }
 
@@ -22,6 +21,24 @@ export default function NewsFeedComponent() {
     const interval = setInterval(fetchNews, 60000);
     return () => clearInterval(interval);
   }, [filter]);
+
+  const extractTheme = (title: string): string => {
+    const themes = [
+      { keyword: 'earthquake', label: '지진' },
+      { keyword: 'wildfire', label: '산불' },
+      { keyword: 'hurricane', label: '허리케인' },
+      { keyword: 'tornado', label: '토네이도' },
+      { keyword: 'flood', label: '홍수' },
+      { keyword: 'tsunami', label: '쓰나미' },
+      { keyword: 'volcano', label: '화산' },
+      { keyword: 'storm', label: '폭풍' },
+    ];
+    const lowerTitle = title.toLowerCase();
+    for (const theme of themes) {
+      if (lowerTitle.includes(theme.keyword)) return theme.label;
+    }
+    return '기타';
+  };
 
   const fetchNews = async () => {
     try {
@@ -41,13 +58,12 @@ export default function NewsFeedComponent() {
       }
 
       const data = await response.json();
-      const items: NewsItem[] = (data.articles || []).map((article: any) => ({
-        gdate: article.gdeltDate || '',
-        headline: article.title || article.gdeltTitle || 'No headline',
-        url: article.url || '#',
-        source: article.sourceDomain || 'Unknown',
-        location: article.location?.[0]?.gdeltName || '',
-        theme: article.themes?.[0] || '',
+      const items: NewsItem[] = (data.data || []).map((item: any) => ({
+        title: item.title || 'No headline',
+        url: item.link || '#',
+        pubDate: item.pubDate || '',
+        description: item.description || '',
+        theme: extractTheme(item.title),
       }));
 
       setNews(items);
