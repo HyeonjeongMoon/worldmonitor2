@@ -87,7 +87,7 @@ export async function GET(request: Request) {
 
 function buildNewsURL(days: number, maxItems: number, theme: string | null, location: string | null): URL {
   const url = new URL('https://news.google.com/rss');
-  url.searchParams.set('q', `${theme ? theme + ' ' : ''}${location ? location + ' ' : ''}disaster OR earthquake OR wildfire OR hurricane OR tornado OR flood OR storm OR tsunami OR volcano`);
+  url.searchParams.set('q', `${theme ? theme + ' ' : ''}${location ? location + ' ' : ''}disaster OR earthquake OR wildfire OR hurricane OR tornado OR flood OR storm OR tsunami OR volcano OR stock OR economy OR inflation OR market OR AI OR technology OR startup OR tech OR election OR policy OR government OR politics`);
   url.searchParams.set('hl', 'ko');
   url.searchParams.set('gl', 'KR');
   url.searchParams.set('ceid', 'KR:ko');
@@ -96,7 +96,7 @@ function buildNewsURL(days: number, maxItems: number, theme: string | null, loca
 
 function buildTrendingURL(days: number, maxItems: number, theme: string | null, location: string | null): URL {
   const url = new URL('https://news.google.com/rss');
-  url.searchParams.set('q', `${theme ? theme + ' ' : ''}${location ? location + ' ' : ''}disaster OR earthquake OR wildfire OR hurricane OR tornado OR flood OR storm OR tsunami OR volcano`);
+  url.searchParams.set('q', `${theme ? theme + ' ' : ''}${location ? location + ' ' : ''}disaster OR earthquake OR wildfire OR hurricane OR tornado OR flood OR storm OR tsunami OR volcano OR stock OR economy OR inflation OR market OR AI OR technology OR startup OR tech OR election OR policy OR government OR politics`);
   url.searchParams.set('hl', 'ko');
   url.searchParams.set('gl', 'KR');
   url.searchParams.set('ceid', 'KR:ko');

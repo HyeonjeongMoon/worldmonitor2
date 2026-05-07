@@ -32,6 +32,18 @@ export default function NewsFeedComponent() {
       { keyword: 'tsunami', label: '쓰나미' },
       { keyword: 'volcano', label: '화산' },
       { keyword: 'storm', label: '폭풍' },
+      { keyword: 'stock', label: '주식' },
+      { keyword: 'economy', label: '경제' },
+      { keyword: 'inflation', label: '인플레이션' },
+      { keyword: 'market', label: '시장' },
+      { keyword: 'AI', label: 'AI' },
+      { keyword: 'technology', label: '기술' },
+      { keyword: 'startup', label: '스타트업' },
+      { keyword: 'tech', label: '기술' },
+      { keyword: 'election', label: '선거' },
+      { keyword: 'policy', label: '정책' },
+      { keyword: 'government', label: '정부' },
+      { keyword: 'politics', label: '정치' },
     ];
     const lowerTitle = title.toLowerCase();
     for (const theme of themes) {
