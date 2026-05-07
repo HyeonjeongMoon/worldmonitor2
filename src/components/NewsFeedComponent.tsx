@@ -153,11 +153,11 @@ export default function NewsFeedComponent() {
             }}
           >
             <div style={{ fontSize: '12px', color: '#888', marginBottom: '5px' }}>
-              {item.source}
-              {item.location && ` • ${item.location}`}
+              {item.theme}
+              {item.pubDate && ` • ${new Date(item.pubDate).toLocaleDateString()}`}
             </div>
-            <div style={{ fontSize: '14px', marginBottom: '5px' }}>{item.headline}</div>
-            <div style={{ fontSize: '11px', color: '#666' }}>{item.gdate}</div>
+            <div style={{ fontSize: '14px', marginBottom: '5px' }}>{item.title}</div>
+            <div style={{ fontSize: '11px', color: '#666' }}>{item.description}</div>
           </a>
         ))}
       </div>
