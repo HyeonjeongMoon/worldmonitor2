@@ -77,7 +77,18 @@ export default function MapComponent() {
     ) => {
       try {
         const response = await fetch(url);
+
+        if (!response.ok) {
+          console.error(`Failed to load ${layerType}: HTTP ${response.status}`);
+          return;
+        }
+
         const data = await response.json();
+
+        if (data.type !== 'FeatureCollection' || !Array.isArray(data.features)) {
+          console.error(`Invalid GeoJSON from ${layerType}: missing type or features`);
+          return;
+        }
 
         const sourceId = `${layerType}-source`;
         const layerId = `${layerType}-layer`;
