@@ -12,6 +12,9 @@ export default function MapComponent() {
     wildfires: true,
   });
 
+  const [mapError, setMapError] = useState<string | null>(null);
+  const [mapLoading, setMapLoading] = useState(true);
+
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
 
@@ -42,6 +45,15 @@ export default function MapComponent() {
       center: [0, 20],
       zoom: 2,
       attributionControl: false,
+    });
+
+    map.on('error', (e) => {
+      console.error('Map error:', e.error);
+      setMapError(e.error?.message || 'Map rendering error');
+    });
+
+    map.on('load', () => {
+      setMapLoading(false);
     });
 
     mapInstance.current = map;
@@ -103,8 +115,9 @@ export default function MapComponent() {
       );
     } else {
       const sourceId = 'earthquakes-source';
-      if (map.getLayer(sourceId)) {
-        map.removeLayer(sourceId);
+      const layerId = 'earthquakes-layer';
+      if (map.getLayer(layerId)) {
+        map.removeLayer(layerId);
       }
       if (map.getSource(sourceId)) {
         map.removeSource(sourceId);
@@ -120,8 +133,9 @@ export default function MapComponent() {
       );
     } else {
       const sourceId = 'wildfires-source';
-      if (map.getLayer(sourceId)) {
-        map.removeLayer(sourceId);
+      const layerId = 'wildfires-layer';
+      if (map.getLayer(layerId)) {
+        map.removeLayer(layerId);
       }
       if (map.getSource(sourceId)) {
         map.removeSource(sourceId);
@@ -141,6 +155,38 @@ export default function MapComponent() {
           left: 0,
         }}
       />
+      {mapLoading && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            color: '#fff',
+            fontSize: '14px',
+            zIndex: 1,
+          }}
+        >
+          Loading map...
+        </div>
+      )}
+      {mapError && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            color: '#ff4444',
+            fontSize: '14px',
+            zIndex: 1,
+            textAlign: 'center',
+          }}
+        >
+          <div style={{ marginBottom: '10px' }}>Map Error</div>
+          <div>{mapError}</div>
+        </div>
+      )}
       <div
         style={{
           position: 'absolute',

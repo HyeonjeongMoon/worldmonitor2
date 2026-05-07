@@ -22,10 +22,27 @@ function setCache(key: string, data: any) {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const action = searchParams.get('action') || 'news';
-  const days = parseInt(searchParams.get('days') || '1', 10);
-  const maxItems = parseInt(searchParams.get('maxItems') || '50', 10);
+  const rawDays = searchParams.get('days');
+  const rawMaxItems = searchParams.get('maxItems');
   const theme = searchParams.get('theme');
   const location = searchParams.get('location');
+
+  const days = rawDays ? parseInt(rawDays) : 1;
+  const maxItems = rawMaxItems ? parseInt(rawMaxItems) : 50;
+
+  if (isNaN(days) || days < 1 || days > 365) {
+    return NextResponse.json(
+      { error: 'days must be between 1 and 365' },
+      { status: 400 }
+    );
+  }
+
+  if (isNaN(maxItems) || maxItems < 1 || maxItems > 500) {
+    return NextResponse.json(
+      { error: 'maxItems must be between 1 and 500' },
+      { status: 400 }
+    );
+  }
 
   const cacheKey = `${action}-${days}-${maxItems}-${theme || 'none'}-${location || 'none'}`;
   const cached = getCached(cacheKey);
