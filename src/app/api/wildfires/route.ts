@@ -9,9 +9,9 @@ export async function GET(request: Request) {
 
   const days = rawDays ? parseInt(rawDays) : 5;
 
-  if (isNaN(days) || days < 1 || days > 30) {
+  if (isNaN(days) || days < 1 || days > 5) {
     return NextResponse.json(
-      { error: 'days must be between 1 and 30' },
+      { error: 'days must be between 1 and 5' },
       { status: 400 }
     );
   }
