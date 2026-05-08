@@ -3,22 +3,23 @@
 import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import CesiumGlobe from './CesiumGlobe';
 
 export default function MapComponent() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<maplibregl.Map | null>(null);
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
   const [layers, setLayers] = useState({
     earthquakes: true,
     wildfires: true,
     geoBoundary: false,
   });
-
-  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
   const [geoBoundaryLoaded, setGeoBoundaryLoaded] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [mapLoading, setMapLoading] = useState(true);
 
   useEffect(() => {
+    if (viewMode !== '2d') return;
     if (!mapRef.current || mapInstance.current) return;
 
     const map = new maplibregl.Map({
@@ -45,10 +46,10 @@ export default function MapComponent() {
           },
         ],
       },
-      center: viewMode === '3d' ? [127.5, 36] : [0, 20],
-      zoom: viewMode === '3d' ? 4 : 2,
-      pitch: viewMode === '3d' ? 60 : 0,
-      bearing: viewMode === '3d' ? -15 : 0,
+      center: [0, 20],
+      zoom: 2,
+      pitch: 0,
+      bearing: 0,
       attributionControl: false,
     });
 
@@ -70,9 +71,100 @@ export default function MapComponent() {
   }, [viewMode]);
 
   useEffect(() => {
-    if (!mapInstance.current || !layers.geoBoundary) return;
-
+    if (viewMode !== '2d') return;
     const map = mapInstance.current;
+    if (!map) return;
+
+    const fetchAndAddLayer = async (
+      layerType: 'earthquakes' | 'wildfires',
+      url: string,
+      color: string,
+      radius: number
+    ) => {
+      try {
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          console.error(`Failed to load ${layerType}: HTTP ${response.status}`);
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data.type !== 'FeatureCollection' || !Array.isArray(data.features)) {
+          console.error(`Invalid GeoJSON from ${layerType}: missing type or features`);
+          return;
+        }
+
+        const sourceId = `${layerType}-source`;
+        const layerId = `${layerType}-layer`;
+
+        if (map.getSource(sourceId)) {
+          (map.getSource(sourceId) as maplibregl.GeoJSONSource).setData(data);
+        } else {
+          map.addSource(sourceId, {
+            type: 'geojson',
+            data,
+          });
+
+          map.addLayer({
+            id: layerId,
+            type: 'circle',
+            source: sourceId,
+            paint: {
+              'circle-radius': radius,
+              'circle-color': color,
+              'circle-opacity': 0.8,
+            },
+          });
+        }
+      } catch (error) {
+        console.error(`Failed to load ${layerType}:`, error);
+      }
+    };
+
+    if (layers.earthquakes) {
+      fetchAndAddLayer(
+        'earthquakes',
+        '/api/earthquakes?days=7&minMagnitude=2.5',
+        '#ff4444',
+        6
+      );
+    } else {
+      const sourceId = 'earthquakes-source';
+      const layerId = 'earthquakes-layer';
+      if (map.getLayer(layerId)) {
+        map.removeLayer(layerId);
+      }
+      if (map.getSource(sourceId)) {
+        map.removeSource(sourceId);
+      }
+    }
+
+    if (layers.wildfires) {
+      fetchAndAddLayer(
+        'wildfires',
+        '/api/wildfires?days=7&source=VIIRS_S-NPP_NRT',
+        '#ff8800',
+        4
+      );
+    } else {
+      const sourceId = 'wildfires-source';
+      const layerId = 'wildfires-layer';
+      if (map.getLayer(layerId)) {
+        map.removeLayer(layerId);
+      }
+      if (map.getSource(sourceId)) {
+        map.removeSource(sourceId);
+      }
+    }
+  }, [viewMode, layers]);
+
+  useEffect(() => {
+    if (viewMode !== '2d') return;
+    const map = mapInstance.current;
+    if (!map || !layers.geoBoundary) return;
+
     const sourceId = 'geoboundary-source';
     const lineLayerId = 'geoboundary-line';
     const fillLayerId = 'geoboundary-fill';
@@ -128,224 +220,33 @@ export default function MapComponent() {
       if (map.getSource(sourceId)) map.removeSource(sourceId);
       setGeoBoundaryLoaded(false);
     };
-  }, [layers.geoBoundary]);
-
-  useEffect(() => {
-    if (!mapInstance.current) return;
-
-    const map = mapInstance.current;
-
-    const fetchAndAddLayer = async (
-      layerType: 'earthquakes' | 'wildfires',
-      url: string,
-      color: string,
-      radius: number
-    ) => {
-      try {
-        const response = await fetch(url);
-
-        if (!response.ok) {
-          console.error(`Failed to load ${layerType}: HTTP ${response.status}`);
-          return;
-        }
-
-        const data = await response.json();
-
-        if (data.type !== 'FeatureCollection' || !Array.isArray(data.features)) {
-          console.error(`Invalid GeoJSON from ${layerType}: missing type or features`);
-          return;
-        }
-
-        const sourceId = `${layerType}-source`;
-        const layerId = `${layerType}-layer`;
-
-        if (map.getSource(sourceId)) {
-          (map.getSource(sourceId) as maplibregl.GeoJSONSource).setData(data);
-        } else {
-          map.addSource(sourceId, {
-            type: 'geojson',
-            data,
-          });
-
-          map.addLayer({
-            id: layerId,
-            type: 'circle',
-            source: sourceId,
-            paint: {
-              'circle-radius': radius,
-              'circle-color': color,
-              'circle-opacity': 0.8,
-            },
-          });
-        }
-      } catch (error) {
-        console.error(`Failed to load ${layerType}:`, error);
-      }
-    };
-
-    if (layers.earthquakes) {
-      fetchAndAddLayer(
-        'earthquakes',
-        '/api/earthquakes?days=7&minMagnitude=2.5',
-        '#ff4444',
-        6
-      );
-    } else {
-      const sourceId = 'earthquakes-source';
-      const layerId = 'earthquakes-layer';
-      if (map.getLayer(layerId)) {
-        map.removeLayer(layerId);
-      }
-      if (map.getSource(sourceId)) {
-        map.removeSource(sourceId);
-      }
-    }
-
-    if (layers.wildfires) {
-      fetchAndAddLayer(
-        'wildfires',
-        '/api/wildfires?days=7&source=VIIRS_S-NPP_NRT',
-        '#ff8800',
-        4
-      );
-    } else {
-      const sourceId = 'wildfires-source';
-      const layerId = 'wildfires-layer';
-      if (map.getLayer(layerId)) {
-        map.removeLayer(layerId);
-      }
-      if (map.getSource(sourceId)) {
-        map.removeSource(sourceId);
-      }
-    }
-  }, [layers]);
-
-  useEffect(() => {
-    if (!mapInstance.current) return;
-    const map = mapInstance.current;
-
-    if (viewMode === '3d') {
-      map.easeTo({
-        pitch: 60,
-        bearing: -15,
-        center: [127.5, 36],
-        zoom: 4,
-        duration: 1500,
-      });
-    } else {
-      map.easeTo({
-        pitch: 0,
-        bearing: 0,
-        center: [0, 20],
-        zoom: 2,
-        duration: 1500,
-      });
-    }
-  }, [viewMode]);
-
-  useEffect(() => {
-    if (!mapInstance.current) return;
-
-    const map = mapInstance.current;
-
-    const fetchAndAddLayer = async (
-      layerType: 'earthquakes' | 'wildfires',
-      url: string,
-      color: string,
-      radius: number
-    ) => {
-      try {
-        const response = await fetch(url);
-
-        if (!response.ok) {
-          console.error(`Failed to load ${layerType}: HTTP ${response.status}`);
-          return;
-        }
-
-        const data = await response.json();
-
-        if (data.type !== 'FeatureCollection' || !Array.isArray(data.features)) {
-          console.error(`Invalid GeoJSON from ${layerType}: missing type or features`);
-          return;
-        }
-
-        const sourceId = `${layerType}-source`;
-        const layerId = `${layerType}-layer`;
-
-        if (map.getSource(sourceId)) {
-          (map.getSource(sourceId) as maplibregl.GeoJSONSource).setData(data);
-        } else {
-          map.addSource(sourceId, {
-            type: 'geojson',
-            data,
-          });
-
-          map.addLayer({
-            id: layerId,
-            type: 'circle',
-            source: sourceId,
-            paint: {
-              'circle-radius': radius,
-              'circle-color': color,
-              'circle-opacity': 0.8,
-            },
-          });
-        }
-      } catch (error) {
-        console.error(`Failed to load ${layerType}:`, error);
-      }
-    };
-
-    if (layers.earthquakes) {
-      fetchAndAddLayer(
-        'earthquakes',
-        '/api/earthquakes?days=7&minMagnitude=2.5',
-        '#ff4444',
-        6
-      );
-    } else {
-      const sourceId = 'earthquakes-source';
-      const layerId = 'earthquakes-layer';
-      if (map.getLayer(layerId)) {
-        map.removeLayer(layerId);
-      }
-      if (map.getSource(sourceId)) {
-        map.removeSource(sourceId);
-      }
-    }
-
-    if (layers.wildfires) {
-      fetchAndAddLayer(
-        'wildfires',
-        '/api/wildfires?days=7&source=VIIRS_S-NPP_NRT',
-        '#ff8800',
-        4
-      );
-    } else {
-      const sourceId = 'wildfires-source';
-      const layerId = 'wildfires-layer';
-      if (map.getLayer(layerId)) {
-        map.removeLayer(layerId);
-      }
-      if (map.getSource(sourceId)) {
-        map.removeSource(sourceId);
-      }
-    }
-  }, [layers]);
+  }, [viewMode, layers.geoBoundary]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <div
-        ref={mapRef}
-        style={{
-          width: '100%',
-          height: '100%',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-        }}
-      />
-      {mapLoading && (
+      {viewMode === '2d' && (
+        <div
+          ref={mapRef}
+          style={{
+            width: '100%',
+            height: '100%',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+          }}
+        />
+      )}
+      {viewMode === '3d' && (
+        <CesiumGlobe
+          earthquakes={layers.earthquakes}
+          wildfires={layers.wildfires}
+          geoBoundary={layers.geoBoundary}
+          centerLon={127.5}
+          centerLat={36}
+          zoomLevel={4}
+        />
+      )}
+      {viewMode === '2d' && mapLoading && (
         <div
           style={{
             position: 'absolute',
@@ -360,7 +261,7 @@ export default function MapComponent() {
           Loading map...
         </div>
       )}
-      {mapError && (
+      {viewMode === '2d' && mapError && (
         <div
           style={{
             position: 'absolute',
