@@ -49,18 +49,20 @@ export default function CesiumGlobe({
       viewer.scene.globe.baseColor = Cesium.Color.BLACK;
       viewer.scene.globe.enableLighting = true;
       viewer.scene.skyAtmosphere = new Cesium.SkyAtmosphere();
-      viewer.scene.sun.show = true;
-      viewer.scene.moon.show = true;
+      if (viewer.scene.sun) {
+        viewer.scene.sun.show = true;
+      }
+      if (viewer.scene.moon) {
+        viewer.scene.moon.show = true;
+      }
       viewer.scene.fog.enabled = false;
 
-      const basemap = viewer.imageryLayers.addImageryProvider(
+      viewer.imageryLayers.addImageryProvider(
         new Cesium.UrlTemplateImageryProvider({
           url: 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
           maximumLevel: 20,
         })
       );
-
-      viewer.scene.globe.baseColor = basemap ? Cesium.Color.BLACK : undefined;
 
       cesiumContainerRef.current = viewer;
       setCesiumLoading(false);

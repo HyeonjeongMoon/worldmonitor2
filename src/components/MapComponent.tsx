@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import CesiumGlobe from './CesiumGlobe';
+
+const CesiumGlobe = dynamic(() => import('./CesiumGlobe'), { ssr: false });
 
 export default function MapComponent() {
   const mapRef = useRef<HTMLDivElement>(null);

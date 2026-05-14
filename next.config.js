@@ -6,10 +6,6 @@ const nextConfig = {
     },
   },
   webpack(config) {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      cesium: 'cesium/Source/Cesium.js',
-    };
     // Cesium requires buffer and crypto polyfills for Node.js compatibility
     config.resolve.fallback = {
       ...config.resolve.fallback,
